@@ -1,4 +1,6 @@
 import { Tabs } from "expo-router";
+import { Home, Dumbbell, Apple, Heart, User } from 'lucide-react-native';
+
 export default function TabsLayout() {
     return (
         <Tabs
@@ -16,7 +18,7 @@ export default function TabsLayout() {
                 name="index"
                 options={{
                     title: "Trang chủ",
-                    // tabBarIcon: "home",
+                    tabBarIcon: () => <Home color="#fff" />,
 
                 }}
             />
@@ -24,14 +26,20 @@ export default function TabsLayout() {
                 name="workout-list"
                 options={{
                     title: "Danh sách bài tập",
-                    // tabBarIcon: "list",
+                    tabBarIcon: () => <Dumbbell color="#fff" />,
                 }}
             />
             <Tabs.Screen
-                name="nutrient"
+                name="(nutrient)"
                 options={{
                     title: "Dinh dưỡng",
-                    // tabBarIcon: "user",
+                    tabBarIcon: () => <Apple color="#fff" />,
+                }}
+            /><Tabs.Screen
+                name="profile"
+                options={{
+                    title: "Profile",
+                    tabBarIcon: () => <User color="#fff" />,
                 }}
             />
         </Tabs>
