@@ -36,6 +36,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "rapidApiKey": "process.env.EXPO_PUBLIC_RAPIDAPI_EXERCISEDB_KEY"
     }
   }
 }
