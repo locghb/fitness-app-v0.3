@@ -56,14 +56,14 @@ const index = () => {
 
   const handleNext = () => {
     if (currentIndex === onboardingData.length - 1) {
-      router.push("./index");
+      router.push("./(auth)");
     } else {
       scrollToIndex(currentIndex + 1);
     }
   };
 
   const handleSkip = () => {
-    router.push("./index");
+    router.push("./(auth)");
   };
 
   const renderItem = ({ item }: { item: typeof onboardingData[0] }) => {

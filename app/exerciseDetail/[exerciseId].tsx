@@ -6,20 +6,27 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
-  ScrollView,
+  TouchableOpacity, // Thêm TouchableOpacity
 } from "react-native";
-import { useLocalSearchParams, Stack } from "expo-router";
-// Đường dẫn từ app/exerciseDetail/ lên app/ rồi vào lib/
-import { fetchExerciseById, Exercise } from "../../lib/exerciseDB";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router"; // Thêm useRouter
 import { StatusBar } from "expo-status-bar";
 
-export default function ExerciseDetailScreen() {
+// Đường dẫn đến fetch và type Exercise
+import { fetchExerciseById, Exercise } from "../../lib/exerciseDB"; // Đảm bảo đường dẫn đúng
+
+// Đổi tên component để phản ánh chức năng mới (tùy chọn)
+export default function ExercisePlaybackScreen() {
   // Lấy exerciseId từ tham số URL
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
+  const router = useRouter(); // Khởi tạo router
+
+  // State cho chi tiết bài tập
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false); // State cho nút
 
+  // Effect để tải chi tiết bài tập
   useEffect(() => {
     const loadExerciseDetail = async () => {
       if (!exerciseId) {
@@ -30,7 +37,7 @@ export default function ExerciseDetailScreen() {
       setLoading(true);
       setError(null);
       try {
-        console.log(`Workspaceing detail for exercise ID: ${exerciseId}`); // Debugging
+        console.log(`Đang tải chi tiết cho exercise ID: ${exerciseId}`);
         const data = await fetchExerciseById(exerciseId);
         if (data) {
           setExercise(data);
@@ -38,7 +45,7 @@ export default function ExerciseDetailScreen() {
           setError("Không tìm thấy chi tiết bài tập.");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Lỗi tải chi tiết:", err);
         setError("Không thể tải chi tiết bài tập. Vui lòng thử lại.");
       } finally {
         setLoading(false);
@@ -46,35 +53,59 @@ export default function ExerciseDetailScreen() {
     };
 
     loadExerciseDetail();
-  }, [exerciseId]); // Chạy lại khi exerciseId thay đổi
+  }, [exerciseId]);
 
   // Viết hoa chữ cái đầu của tên bài tập
   const capitalizedName = exercise?.name
     ? exercise.name.charAt(0).toUpperCase() + exercise.name.slice(1)
-    : "Chi tiết bài tập";
+    : "Bài tập"; // Title mặc định ngắn gọn hơn
 
-  // Hiển thị loading
+  // Hàm xử lý khi nhấn "Hoàn thành"
+  const handleComplete = () => {
+    if (isProcessing || !exercise) return;
+    setIsProcessing(true);
+    console.log(`Hoàn thành bài tập (điều hướng): ${exercise.name}`);
+    // Logic điều hướng sau khi hoàn thành
+    // Ví dụ: Quay lại màn hình danh sách hoặc màn hình chính
+    setTimeout(() => {
+      router.back(); // Quay lại màn hình trước đó
+      // Hoặc router.replace('/'); // Về màn hình chính
+    }, 300); // Timeout nhỏ để thấy hiệu ứng loading
+  };
+
+  // Hàm xử lý khi nhấn "Bỏ qua"
+  const handleSkip = () => {
+    if (isProcessing || !exercise) return;
+    console.log(`Bỏ qua bài tập (điều hướng): ${exercise.name}`);
+    // Logic điều hướng sau khi bỏ qua
+    router.back(); // Quay lại màn hình trước đó
+  };
+
+  // ---- Hiển thị Loading ----
   if (loading) {
     return (
       <View style={styles.center}>
-        {/* Đặt tạm title */}
         <Stack.Screen options={{ title: "Đang tải..." }} />
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
-  // Hiển thị lỗi
+  // ---- Hiển thị Lỗi ----
   if (error) {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: "Lỗi" }} />
         <Text style={styles.errorText}>{error}</Text>
+        {/* Thêm nút quay lại nếu muốn */}
+        <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
+          <Text style={styles.goBackButtonText}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Trường hợp không tìm thấy bài tập (API trả về null hoặc lỗi)
+  // ---- Trường hợp không tìm thấy bài tập ----
   if (!exercise) {
     return (
       <View style={styles.center}>
@@ -82,142 +113,138 @@ export default function ExerciseDetailScreen() {
         <Text style={styles.errorText}>
           Không tìm thấy dữ liệu cho bài tập này.
         </Text>
+         <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
+          <Text style={styles.goBackButtonText}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Hàm helper để hiển thị danh sách text (Hướng dẫn, Nhóm cơ phụ)
-  const renderTextList = (title: string, items: string[] | undefined) => {
-    if (!items || items.length === 0) return null; // Không hiển thị nếu không có item
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {items.map((item, index) => (
-          // Viết hoa chữ cái đầu của mỗi mục
-          <Text key={index} style={styles.listItem}>
-            • {item.charAt(0).toUpperCase() + item.slice(1)}
-          </Text>
-        ))}
-      </View>
-    );
-  };
-
-  // Hiển thị chi tiết bài tập
+  // ---- Hiển thị chính ----
   return (
-    // Sử dụng ScrollView để nội dung dài có thể cuộn
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
+    <View style={styles.container}>
       <StatusBar style="dark" />
-      {/* Đặt title header bằng tên bài tập */}
+      {/* Đặt title header */}
       <Stack.Screen options={{ title: capitalizedName }} />
 
       {/* Ảnh GIF */}
+      {/* Sử dụng Image chuẩn vì uri đã có */}
       <Image
         source={{ uri: exercise.gifUrl }}
-        style={styles.gif}
+        style={styles.exerciseImage} // Sử dụng style giống workout.js
         resizeMode="contain"
       />
 
       {/* Tên bài tập */}
+      {/* Có thể thêm số set/rep nếu API trả về, hiện tại chỉ có tên */}
       <Text style={styles.exerciseName}>{capitalizedName}</Text>
 
-      {/* Thông tin cơ bản */}
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Nhóm cơ chính:</Text>
-        <Text style={styles.infoValue}>{exercise.target}</Text>
+      {/* Hàng nút bấm */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity
+          style={[styles.button, styles.skipButton]}
+          onPress={handleSkip}
+          disabled={isProcessing}
+        >
+          <Text style={[styles.buttonText, styles.skipButtonText]}>Bỏ qua</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.completeButton]}
+          onPress={handleComplete}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Hoàn thành</Text>
+          )}
+        </TouchableOpacity>
       </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.infoLabel}>Dụng cụ:</Text>
-        <Text style={styles.infoValue}>{exercise.equipment}</Text>
-      </View>
-
-      {/* Nhóm cơ phụ */}
-      {renderTextList("Nhóm cơ phụ:", exercise.secondaryMuscles)}
-
-      {/* Hướng dẫn */}
-      {renderTextList("Hướng dẫn:", exercise.instructions)}
-    </ScrollView>
+    </View>
   );
 }
 
-// Styles cho màn hình chi tiết
+// --- Styles --- (Dựa trên workout.js và điều chỉnh)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // Nền trắng cho sạch sẽ
+    justifyContent: "center", // Căn giữa nội dung chính (ảnh, tên)
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff", // Nền trắng
   },
-  contentContainer: {
-    padding: 20, // Padding xung quanh nội dung
-    paddingBottom: 40, // Thêm padding dưới cùng
-  },
-  center: {
-    // Style cho trạng thái loading/error
+  center: { // Style cho loading/error
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "#fff",
   },
-  gif: {
-    width: "100%",
-    height: 300, // Chiều cao cố định cho GIF
-    backgroundColor: "#f0f0f0", // Màu nền chờ tải ảnh
-    marginBottom: 20,
-    alignSelf: "center",
-    borderRadius: 10, // Bo góc nhẹ
+  exerciseImage: {
+    width: "90%", // Chiều rộng linh hoạt
+    aspectRatio: 1, // Giữ tỉ lệ vuông (hoặc điều chỉnh)
+    marginBottom: 30, // Khoảng cách dưới ảnh
+    backgroundColor: '#f0f0f0', // Nền chờ
   },
   exerciseName: {
-    fontSize: 24,
+    fontSize: 22, // Cỡ chữ vừa phải
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 40, // Khoảng cách lớn trước nút
     color: "#333",
-    textTransform: "capitalize", // Viết hoa chữ cái đầu
-  },
-  infoRow: {
-    // Style cho các hàng thông tin (Nhóm cơ, Dụng cụ)
-    flexDirection: "row",
-    marginBottom: 12,
-    alignItems: "flex-start", // Căn chỉnh theo đầu dòng nếu text dài
-  },
-  infoLabel: {
-    fontSize: 16,
-    fontWeight: "600", // In đậm nhãn
-    color: "#555",
-    marginRight: 8,
-    minWidth: 120, // Đảm bảo các giá trị được căn chỉnh thẳng hàng
-  },
-  infoValue: {
-    fontSize: 16,
-    color: "#333",
-    flex: 1, // Cho phép text giá trị tự động xuống dòng
     textTransform: "capitalize",
   },
-  section: {
-    // Style cho các phần (Nhóm cơ phụ, Hướng dẫn)
-    marginTop: 15,
-    marginBottom: 10,
-    borderTopWidth: 1, // Thêm đường kẻ phân cách nhẹ
-    borderTopColor: "#eee",
-    paddingTop: 15,
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-around", // Phân bố đều nút
+    width: "100%", // Chiếm toàn bộ chiều rộng
+    position: 'absolute', // Đặt ở dưới cùng
+    bottom: 40, // Khoảng cách từ đáy
+    left: 20, // Cần thêm padding container hoặc left/right cho buttonRow
+    right: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10, // Tăng khoảng cách dưới tiêu đề phần
-    color: "#444",
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 130, // Chiều rộng tối thiểu
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  listItem: {
-    // Style cho từng mục trong danh sách Hướng dẫn/Cơ phụ
+  skipButton: {
+    backgroundColor: "#eee",
+  },
+  completeButton: {
+    backgroundColor: "#007AFF",
+  },
+  buttonText: {
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  skipButtonText: {
     color: "#333",
-    marginBottom: 8, // Tăng khoảng cách giữa các mục
-    lineHeight: 24, // Tăng chiều cao dòng cho dễ đọc
   },
   errorText: {
     fontSize: 16,
     color: "red",
     textAlign: "center",
+    marginBottom: 20, // Thêm khoảng cách trước nút Quay lại
+  },
+  goBackButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    backgroundColor: "#007AFF",
+    borderRadius: 20,
+  },
+  goBackButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

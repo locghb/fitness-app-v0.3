@@ -1,74 +1,82 @@
-// fitness-app-v0.2/app/(tabs)/exercises/[bodyPart].tsx (SỬA LỖI IMPORT CHO CẤU TRÚC HIỆN TẠI)
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-// *** SỬA ĐƯỜNG DẪN IMPORT Ở ĐÂY ***
-import { fetchExercisesByBodyPart, Exercise } from '../../lib/exerciseDB'; 
-import { StatusBar } from 'expo-status-bar';
+// fitness-app-v0.2/app/exercises/[bodyPart].tsx
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+} from "react-native";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router";
+import { fetchExercisesByBodyPart, Exercise } from "../../lib/exerciseDB"; // Đảm bảo có hàm này và đường dẫn đúng
+import { StatusBar } from "expo-status-bar";
 
-// ... (Phần còn lại của file giữ nguyên) ...
-
-// Component con để hiển thị một item bài tập (Không đổi)
-const ExerciseListItem = React.memo(({ item, onPress }: { item: Exercise; onPress: (id: string) => void }) => (
-  <TouchableOpacity style={styles.exerciseItem} onPress={() => onPress(item.id)}>
-    <Image source={{ uri: item.gifUrl }} style={styles.exerciseImage} resizeMode="contain" />
-    <View style={styles.exerciseInfo}>
-      <Text style={styles.exerciseName} numberOfLines={2}>{item.name}</Text>
-      <Text style={styles.exerciseTarget}>Nhóm cơ: {item.target}</Text>
-    </View>
-  </TouchableOpacity>
-));
-
-export default function ExerciseListScreen() {
+export default function BodyPartExercisesScreen() {
   const router = useRouter();
-  const { bodyPart: encodedBodyPart } = useLocalSearchParams<{ bodyPart: string }>();
-  const bodyPart = decodeURIComponent(encodedBodyPart || '');
-
+  const { bodyPart } = useLocalSearchParams<{ bodyPart: string }>(); // Lấy tên nhóm cơ
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Decode tên nhóm cơ phòng trường hợp có ký tự đặc biệt
+  const decodedBodyPart = bodyPart ? decodeURIComponent(bodyPart) : "";
+  const capitalizedBodyPart = decodedBodyPart
+    ? decodedBodyPart.charAt(0).toUpperCase() + decodedBodyPart.slice(1)
+    : "Bài tập";
+
   useEffect(() => {
+    if (!decodedBodyPart) {
+      setError("Không có tên nhóm cơ.");
+      setLoading(false);
+      return;
+    }
+
     const loadExercises = async () => {
-      if (!bodyPart) {
-        setError('Không có thông tin nhóm cơ.');
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       setError(null);
       try {
-        console.log(`Workspaceing exercises for: ${bodyPart}`);
-        const data = await fetchExercisesByBodyPart(bodyPart);
+        console.log(`Đang tải bài tập cho nhóm cơ: ${decodedBodyPart}`);
+        const data = await fetchExercisesByBodyPart(decodedBodyPart);
         if (data && data.length > 0) {
           setExercises(data);
         } else {
-          if (data) {
-             setExercises([]);
-          } else {
-             setError(`Không tìm thấy bài tập cho nhóm cơ: ${bodyPart}.`);
-          }
+          setError(`Không tìm thấy bài tập nào cho nhóm cơ "${capitalizedBodyPart}".`);
         }
       } catch (err) {
         console.error(err);
-        setError('Không thể tải danh sách bài tập. Vui lòng thử lại.');
+        setError("Không thể tải danh sách bài tập. Vui lòng thử lại.");
       } finally {
         setLoading(false);
       }
     };
 
     loadExercises();
-  }, [bodyPart]);
+  }, [decodedBodyPart]); // Chạy lại khi decodedBodyPart thay đổi
 
   const handlePressExercise = (exerciseId: string) => {
-    // !!! QUAN TRỌNG: Vì thư mục exercises đang nằm trong (tabs),
-    // đường dẫn push này có thể không hoạt động như mong đợi
-    // Nó sẽ cố gắng tìm /exerciseDetail bên trong (tabs) hoặc gây lỗi.
-    // Chúng ta sẽ cần tạo màn hình detail và xem xét lại đường dẫn này sau.
+    // Chuyển hướng đến màn hình chi tiết bài tập kiểu workout
     router.push(`/exerciseDetail/${exerciseId}`);
   };
 
-  const capitalizedBodyPart = bodyPart.charAt(0).toUpperCase() + bodyPart.slice(1);
+  const renderExerciseItem = ({ item }: { item: Exercise }) => {
+    return (
+      <TouchableOpacity
+        style={styles.itemContainer}
+        onPress={() => handlePressExercise(item.id)}
+      >
+        {/* Có thể hiển thị ảnh nhỏ nếu muốn, hoặc chỉ text */}
+        <Image source={{ uri: item.gifUrl }} style={styles.itemImage} />
+        <View style={styles.itemTextContainer}>
+          <Text style={styles.itemTitle}>
+            {item.name.charAt(0).toUpperCase() + item.name.slice(1)}
+          </Text>
+          <Text style={styles.itemSubtitle}>Mục tiêu: {item.target}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -82,8 +90,11 @@ export default function ExerciseListScreen() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: `Lỗi` }} />
+        <Stack.Screen options={{ title: "Lỗi" }} />
         <Text style={styles.errorText}>{error}</Text>
+         <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
+          <Text style={styles.goBackButtonText}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -91,92 +102,84 @@ export default function ExerciseListScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ title: `${capitalizedBodyPart} Bài tập` }} />
-
-      {exercises.length === 0 ? (
-         <View style={styles.center}>
-           <Text style={styles.infoText}>Không có bài tập nào cho nhóm cơ này.</Text>
-         </View>
-       ) : (
-         <FlatList
-           data={exercises}
-           renderItem={({ item }) => <ExerciseListItem item={item} onPress={handlePressExercise} />}
-           keyExtractor={(item) => item.id}
-           contentContainerStyle={styles.listContainer}
-         />
-      )}
+      {/* Đặt title header bằng tên nhóm cơ */}
+      <Stack.Screen options={{ title: capitalizedBodyPart }} />
+      <FlatList
+        data={exercises}
+        renderItem={renderExerciseItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContentContainer}
+      />
     </View>
   );
 }
 
-// ... (Phần styles giữ nguyên) ...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8", // Màu nền sáng hơn
   },
   center: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "#f8f8f8",
   },
-  listContainer: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
+  listContentContainer: {
+    padding: 15,
   },
-  exerciseItem: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
+  itemContainer: {
+    backgroundColor: "#fff",
+    flexDirection: "row", // Hiển thị ảnh và text cạnh nhau
+    alignItems: "center",
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 10,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 2.22,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
     elevation: 2,
-    alignItems: 'center',
   },
-  exerciseImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 5,
+  itemImage: {
+    width: 60, // Ảnh nhỏ hơn
+    height: 60,
     marginRight: 15,
-    backgroundColor: '#eee',
+    borderRadius: 5, // Bo góc ảnh
+    backgroundColor: '#eee', // Nền chờ
   },
-  exerciseInfo: {
-    flex: 1,
+  itemTextContainer: {
+    flex: 1, // Cho phép text chiếm phần còn lại
   },
-  exerciseName: {
+  itemTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: '#333',
-    textTransform: 'capitalize',
+    fontWeight: "bold",
+    color: "#333",
+    textTransform: "capitalize",
+    marginBottom: 3,
   },
-  exerciseTarget: {
+  itemSubtitle: {
     fontSize: 14,
-    color: '#666',
-    textTransform: 'capitalize',
-  },
-  exerciseEquipment: {
-    fontSize: 13,
-    color: '#888',
-    textTransform: 'capitalize',
-    marginTop: 2,
+    color: "#666",
+    textTransform: "capitalize",
   },
   errorText: {
     fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
+    color: "red",
+    textAlign: "center",
+    marginBottom: 20,
   },
-    infoText: {
+   goBackButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    backgroundColor: "#007AFF",
+    borderRadius: 20,
+  },
+  goBackButtonText: {
+    color: "#fff",
     fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
+    fontWeight: "bold",
   },
 });
