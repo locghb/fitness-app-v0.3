@@ -26,4 +26,5 @@ thay api key
 
 thêm nav bar
 
-![image](https://github.com/user-attachments/assets/00131a35-dc2b-41fd-900c-393649102793)
+![Uploading image.png…]()
+
