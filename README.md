@@ -1,50 +1,29 @@
-# Welcome to your Expo app 👋
+# 1. cài đặt node_module
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+npm install
 
-## Get started
+# 2. Thay đổi supabase API key
 
-1. Install dependencies
+.env.example -> .env
 
-   ```bash
-   npm install
-   ```
+![image](https://github.com/user-attachments/assets/4a87a4c1-56d1-4aaf-a0d7-d1e590902dc6)
 
-2. Start the app
+connect
+![image](https://github.com/user-attachments/assets/a78226ca-25b7-4157-8d8c-0b73ed9c0c1b)
 
-   ```bash
-    npx expo start
-   ```
+thay api key
+![image](https://github.com/user-attachments/assets/b6a92bd7-a7b9-442d-a8de-52716f96e236)
 
-In the output, you'll find options to open the app in a
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+# 3. URL Configuration
 
-## Get a fresh project
+![image](https://github.com/user-attachments/assets/57588817-f30d-4a47-ab98-1362123533d4)
 
-When you're ready, run:
+## UPDATE
 
-```bash
-npm run reset-project
-```
+đổi cấu trúc thư mục
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+thêm nav bar
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+![image](https://github.com/user-attachments/assets/00131a35-dc2b-41fd-900c-393649102793)
