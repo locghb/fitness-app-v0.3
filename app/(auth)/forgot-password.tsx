@@ -11,37 +11,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { sendOTP } from "../../lib/auth";
+import { requestPasswordReset } from "../../lib/auth-check";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSendOTP = async () => {
-    if (!email) {
-      Alert.alert("Lỗi", "Vui lòng nhập email của bạn");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await sendOTP(email);
-
-      if (result.success) {
-        router.push({
-          pathname: "./otp-verification",
-          params: { email }
-        });
-      } else {
-        Alert.alert("Lỗi", "Không thể gửi mã OTP. Vui lòng thử lại.");
-      }
-    } catch (error) {
-      console.error("Error sending OTP:", error);
-      Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
-    } finally {
-      setIsLoading(false);
+  const handleRequestReset = async () => {
+    const result = await requestPasswordReset(email);
+    if (result) {
+      Alert.alert('Success', result.message);
+      router.push({ pathname: '/otp-verification', params: { email } });
     }
   };
 
@@ -81,7 +62,7 @@ export default function ForgotPasswordScreen() {
 
           <TouchableOpacity
             style={styles.resetButton}
-            onPress={handleSendOTP}
+            onPress={handleRequestReset}
             disabled={isLoading}
           >
             {isLoading ? (

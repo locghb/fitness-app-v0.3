@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { updateUserPassword } from "../../lib/auth";
+import { resetPassword } from "../../lib/auth-check";
 
 export default function ResetPasswordConfirmScreen() {
   const [newPassword, setNewPassword] = useState("");
@@ -22,39 +22,10 @@ export default function ResetPasswordConfirmScreen() {
   const { email } = useLocalSearchParams();
 
   const handleResetPassword = async () => {
-    if (!newPassword || !confirmPassword) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await updateUserPassword(newPassword);
-      if (result.success) {
-        Alert.alert("Thành công", "Đổi mật khẩu thành công", [
-          {
-            text: "OK",
-            onPress: () => router.push("./index"),
-          },
-        ]);
-      } else {
-        Alert.alert("Lỗi", "Không thể đổi mật khẩu. Vui lòng thử lại.");
-      }
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      Alert.alert("Lỗi", "Đã xảy ra lỗi khi đổi mật khẩu");
-    } finally {
-      setIsLoading(false);
+    const result = await resetPassword(newPassword);
+    if (result) {
+      Alert.alert('Success', result.message);
+      router.replace('/(auth)');
     }
   };
 

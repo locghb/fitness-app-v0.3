@@ -17,6 +17,9 @@ export default function HomeScreen() {
     const router = useRouter();
     const { userName } = useLocalSearchParams(); // Lấy tên người dùng từ params
 
+    const handleProfile = async()=>{
+        router.replace("/(tabs)/profile/userprofile")
+    }
     useEffect(() => {
         checkUser();
     }, []);
@@ -38,17 +41,6 @@ export default function HomeScreen() {
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            const result = await signOut();
-            if (result.success) {
-                router.replace("/(auth)");
-            }
-        } catch (error) {
-            console.error("Error signing out:", error);
-        }
-    };
-
     const handleNavigateToWorkout = () => {
         // router.push("./workout-list");
     }
@@ -66,13 +58,13 @@ export default function HomeScreen() {
             <View style={styles.header}>
                 <View style={styles.greeting}>
                     <Text style={styles.hello}>Xin chào,</Text>
-                    <Text style={styles.name}>{userName || user?.email || "Người dùng"}</Text>
+                    <Text style={styles.name}>{userName || user?.fullName || "Người dùng"}</Text>
                 </View>
                 <View style={styles.headerIcons}>
                     <TouchableOpacity style={styles.iconButton}>
                         <Bell size={24} color="#1F2937" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+                    <TouchableOpacity style={styles.iconButton} onPress={handleProfile}>
                         <User2 size={24} color="#1F2937" />
                     </TouchableOpacity>
                 </View>
@@ -106,10 +98,6 @@ export default function HomeScreen() {
                     <Text style={styles.startButtonText}>Bắt đầu</Text>
                 </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutButtonText}>Đăng xuất</Text>
-            </TouchableOpacity>
         </View>
 
     );

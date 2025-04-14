@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { signIn } from "../../lib/auth";
-
+import { signIn,getCurrentUser } from "../../lib/auth-check";
+import * as Linking from 'expo-linking';
+import { supabase } from "@/lib/supabase";
 const index = () => {
 
   const [email, setEmail] = useState("");
@@ -21,28 +22,64 @@ const index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await signIn({ email, password });
-
-      if (result.success) {
-        // Chuyển hướng đến trang chủ
-        router.replace("./(tabs)");
-      } else {
-        Alert.alert("Lỗi", "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+  useEffect(() => {
+    // Kiểm tra người dùng hiện tại
+    getCurrentUser().then((user) => {
+      if (user && user.email_confirmed_at) {
+        router.replace('/(tabs)');
       }
-    } catch (error) {
-      console.error("Error logging in:", error);
-      Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
-    } finally {
-      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Error checking user:', error);
+    });
+  
+    // Xử lý deep link theo tài liệu Expo
+    const handleDeepLink = async ({ url }: { url: string | null }) => {
+      if (!url) return; // Thoát nếu không có URL
+      try {
+        const { path, queryParams } = Linking.parse(url);
+        if (queryParams?.type === 'email') {
+          // Xác minh email
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            Alert.alert('Error', error.message);
+            return;
+          }
+          if (data.session) {
+            router.replace('/(tabs)');
+          }
+        } else if (queryParams?.type === 'recovery') {
+          // Reset mật khẩu
+          router.push('/(auth)/reset-password');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', 'Failed to handle deep link: ' + error.message);
+      }
+    };
+  
+    // Lắng nghe sự kiện URL
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    // Kiểm tra URL ban đầu
+    Linking.getInitialURL()
+      .then((url) => {
+        if (url) handleDeepLink({ url });
+      })
+      .catch((error) => {
+        console.error('Error getting initial URL:', error);
+      });
+  
+    // Cleanup
+    return () => subscription.remove();
+  }, []);
+
+
+  const handleLogin = async () => {
+    const result = await signIn(email, password);
+    if (result?.user) {
+      if (result.user.email_confirmed_at) {
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Error', 'Please verify your email before logging in.');
+      }
     }
   };
 
@@ -95,8 +132,8 @@ const index = () => {
             <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.loginButton} 
+          <TouchableOpacity
+            style={styles.loginButton}
             onPress={handleLogin}
             disabled={isLoading}
           >

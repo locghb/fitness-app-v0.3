@@ -11,55 +11,26 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { signUp } from "../../lib/auth";
+import { signUp } from "../../lib/auth-check";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState<string>(''); // Thêm trường name
+
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert("Lỗi", "Mật khẩu không khớp");
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const result = await signUp({
-        email,
-        password,
-        fullName: "Tên đầy đủ",
-        gender: "male",
-        birthDate: "1990-01-01",
-        height: 170,
-        weight: 60,
-        goalWeight: 70,
-        goalType: "maintain",
-      });
-
-      if (result.success) {
-        Alert.alert("Đăng ký thành công", "Bạn đã đăng ký thành công!", [
-          {
-            text: "OK",
-            onPress: () => {
-            //   router.push("/home");
-            },
-          },
-        ]);
-      } else {
-        Alert.alert("Lỗi", "Đăng ký thất bại. Vui lòng thử lại.");
+      const result = await signUp(email, password, name); // Truyền name
+      if (result) {
+        Alert.alert('Success', result.message);
+        router.replace('/(auth)');
       }
-    } catch (error) {
-      console.error("Error registering:", error);
-      Alert.alert("Lỗi", "Đã xảy ra lỗi. Vui lòng thử lại.");
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -109,13 +80,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Xác nhận mật khẩu</Text>
+            <Text style={styles.label}>Tên người dùng</Text>
             <TextInput
               style={styles.input}
-              placeholder="Nhập lại mật khẩu"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
+              placeholder="Nhập tên"
+              value={name}
+              onChangeText={setName}
             />
           </View>
 

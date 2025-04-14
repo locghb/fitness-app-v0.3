@@ -143,3 +143,13 @@ export async function updateUserPassword(newPassword: string) {
     return { success: false, error };
   }
 }
+// export async function updateUser(fullName: string, email: string, gender: string, birthdate: string) {
+//   try{
+//     const {data, error} = await supabase.auth.updateProfileUser({full_name: fullName, email: email, gender: gender, birth_date: birthdate})
+//     if (error) throw error
+//     return {success: true, data};
+//   }catch(error){
+//     console.error('Error updating user password:', error);
+//     return { success: false, error };
+//   }
+// }
